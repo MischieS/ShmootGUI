@@ -1,36 +1,16 @@
 import redis
 import json
 
-# Connect to Redis
-redis_client = redis.Redis(host="redis", port=6379, db=0, decode_responses=True)
+# Initialize Redis
+redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
 
-def store_live_data(symbol, timeframe, price_data, ttl=60):
-    """
-    Stores real-time market data in Redis with a Time-To-Live (TTL).
-    
-    Parameters:
-        - symbol (str): The trading pair (e.g., "BTCUSDT").
-        - timeframe (str): The selected timeframe (e.g., "1m").
-        - price_data (dict): Contains price, bid, ask, volume, and timestamp.
-        - ttl (int): Time-To-Live in seconds (default: 60 sec).
-    """
-    key = f"trade:{symbol}_{timeframe}"
-    redis_client.setex(key, ttl, json.dumps(price_data))
-    print(f"✅ Live data stored: {symbol} {timeframe}")
+# 📌 Function: Store Real-Time Market Data in Redis
+def store_market_data(symbol, price_data):
+    redis_client.set(f"trade:{symbol}_1m", json.dumps(price_data))
+    redis_client.publish(f"trade_updates:{symbol}", json.dumps(price_data))
+    print(f"Updated Redis: {price_data}")
 
-def fetch_live_data(symbol, timeframe):
-    """
-    Retrieves real-time market data from Redis.
-    
-    Returns:
-        - dict: Price data if found.
-        - None: If no data is available.
-    """
-    key = f"trade:{symbol}_{timeframe}"
-    trade_data = redis_client.get(key)
-    
-    if trade_data:
-        return json.loads(trade_data)
-    else:
-        print(f"⚠️ No live data found for {symbol} {timeframe}")
-        return None
+# 📌 Function: Fetch Market Data from Redis
+def get_market_data(symbol):
+    data = redis_client.get(f"trade:{symbol}_1m")
+    return json.loads(data) if data else None

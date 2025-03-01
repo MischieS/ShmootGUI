@@ -1,21 +1,25 @@
 from fastapi import FastAPI
-import asyncio
-from api.endpoints import router as rest_router
-from api.websockets import start_websocket_server
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+from api.endpoints import router as api_router
+from api.websockets import websocket_router
 
-app = FastAPI()
+# Initialize FastAPI App
+app = FastAPI(title="Shmoot Scalping Bot API", version="1.0")
 
-# Include REST API routes
-app.include_router(rest_router)
+# CORS Middleware (Allows Frontend to Access API)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Change this for production security
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.on_event("startup")
-async def startup_event():
-    """
-    Start the WebSocket server when FastAPI starts.
-    """
-    loop = asyncio.get_event_loop()
-    loop.create_task(start_websocket_server())
+# Register API Routes
+app.include_router(api_router, prefix="/api")
+app.include_router(websocket_router, prefix="/ws")
 
-@app.get("/")
-def root():
-    return {"message": "🚀 Backend API is running!"}
+# Run Server
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

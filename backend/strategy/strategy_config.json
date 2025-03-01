@@ -1,0 +1,16 @@
+{
+    "strategy_type": "ml", 
+    "features": {
+        "ema_periods": [5, 10, 20],
+        "rsi_period": 14,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "macd_signal": 9,
+        "stochastic_k": 14,
+        "bollinger_period": 20
+    },
+    "risk_management": {
+        "stop_loss": 0.02,
+        "take_profit": 0.04
+    }
+}

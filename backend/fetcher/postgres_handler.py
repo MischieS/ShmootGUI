@@ -1,56 +1,39 @@
 import psycopg2
 
-def connect_postgres():
+# PostgreSQL Connection
+def get_db_connection():
     return psycopg2.connect(
-        host="postgres",
-        database="trading_bot",
-        user="trader",
-        password="trading_password"
+        dbname="trading_bot",
+        user="postgres",
+        password="mysecretpassword",
+        host="localhost",
+        port="5432"
     )
 
-def create_table_if_not_exists(symbol, timeframe):
-    """
-    Ensures that the PostgreSQL table exists for storing market data.
-    """
-    table_name = f"market_data_{symbol.replace('/', '')}_{timeframe}"
-    
-    query = f"""
-    CREATE TABLE IF NOT EXISTS {table_name} (
-        id SERIAL PRIMARY KEY,
-        timestamp TIMESTAMP NOT NULL,
-        open_price FLOAT NOT NULL,
-        high_price FLOAT NOT NULL,
-        low_price FLOAT NOT NULL,
-        close_price FLOAT NOT NULL,
-        volume FLOAT NOT NULL
-    );
-    """
-    
-    conn = connect_postgres()
+# 📌 Function: Fetch Historical Market Data
+def fetch_historical_data(symbol):
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(query)
-    conn.commit()
-    cursor.close()
+    
+    cursor.execute(f"SELECT * FROM market_data_{symbol}_1m ORDER BY timestamp DESC LIMIT 100;")
+    rows = cursor.fetchall()
+    
     conn.close()
-    print(f"✅ Table {table_name} is ready.")
+    return rows
 
-def insert_market_data(symbol, timeframe, data):
-    """
-    Inserts market data into PostgreSQL.
-    """
-    create_table_if_not_exists(symbol, timeframe)
-    table_name = f"market_data_{symbol.replace('/', '')}_{timeframe}"
-    
-    conn = connect_postgres()
+# 📌 Function: Insert New Market Data (Ensuring No Duplicates)
+def insert_historical_data(symbol, data):
+    conn = get_db_connection()
     cursor = conn.cursor()
     
-    query = f"""
-    INSERT INTO {table_name} (timestamp, open_price, high_price, low_price, close_price, volume)
-    VALUES (%s, %s, %s, %s, %s, %s)
-    """
-    
-    cursor.executemany(query, data)
+    for candle in data:
+        timestamp, open_price, high_price, low_price, close_price, volume = candle
+        cursor.execute(f"""
+            INSERT INTO market_data_{symbol}_1m (timestamp, open_price, high_price, low_price, close_price, volume)
+            VALUES (TO_TIMESTAMP({timestamp}/1000), {open_price}, {high_price}, {low_price}, {close_price}, {volume})
+            ON CONFLICT (timestamp) DO NOTHING;
+        """)
+
     conn.commit()
     cursor.close()
     conn.close()
-    print(f"✅ Inserted {len(data)} records into {table_name}.")
