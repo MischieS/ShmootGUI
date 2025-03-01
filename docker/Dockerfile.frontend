@@ -1,0 +1,17 @@
+# Use Node.js as base
+FROM node:16
+
+# Set working directory
+WORKDIR /app
+
+# Copy project files
+COPY frontend /app
+
+# Install dependencies
+RUN npm install
+
+# Expose React app port
+EXPOSE 3000
+
+# Start React development server
+CMD ["npm", "start"]

@@ -1,0 +1,1 @@
+# This file makes fetcher a Python package

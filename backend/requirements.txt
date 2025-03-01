@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+websockets
+ccxt
+psycopg2
+redis
+pandas
+xgboost
+scikit-learn
+joblib
+sqlalchemy
