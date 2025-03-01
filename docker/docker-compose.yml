@@ -1,44 +1,43 @@
 
 services:
-  postgres:
-    image: postgres
-    container_name: postgres-container
-    restart: always
-    environment:
-      POSTGRES_USER: trader
-      POSTGRES_PASSWORD: trading_password
-      POSTGRES_DB: trading_bot
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  redis:
-    image: redis
-    container_name: redis-container
-    restart: always
-    ports:
-      - "6379:6379"
-
-  backend:
+  app:
     build:
-      context: ..
-      dockerfile: docker/Dockerfile.backend
-    container_name: backend-container
+      context: ..  # Use parent directory as the build context
+      dockerfile: docker/Dockerfile  # Explicitly specify Dockerfile location
+    container_name: scalping_bot
+    ports:
+      - "80:80"  # Frontend served via Nginx
+      - "8000:8000"  # Backend API
     depends_on:
       - postgres
       - redis
     environment:
-      REDIS_HOST: redis
-      POSTGRES_HOST: postgres
-      POSTGRES_USER: trader
-      POSTGRES_PASSWORD: trading_password
+      - DATABASE_URL=postgresql://postgres:mysecretpassword@postgres:5432/trading_bot
+      - REDIS_URL=redis://redis:6379
+    restart: always
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres-container
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
       POSTGRES_DB: trading_bot
     ports:
-      - "8000:8000"
-      - "8765:8765"
+      - "5432:5432"
+    restart: always
     volumes:
-      - ../backend:/app
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:latest
+    container_name: redis-container
+    ports:
+      - "6379:6379"
+    restart: always
+    volumes:
+      - redis_data:/data
 
 volumes:
   postgres_data:
+  redis_data:
